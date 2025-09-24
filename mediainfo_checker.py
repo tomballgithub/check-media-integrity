@@ -36,9 +36,9 @@ class MediaInfoChecker:
         try:
             result = subprocess.run(mediainfo_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             if result.returncode != 0:
-                raise subprocess.CalledProcessError(result.returncode, mediainfo_command, output=result.stdout, stderr=result.stderr)
+                raise subprocess.CalledProcessError(result.returncode, mediainfo_command, output=result.stdout, stderr=result.stderr.decode('utf-8', errors='replace'))
             
-            mediainfo_output = json.loads(result.stdout)
+            mediainfo_output = json.loads(result.stdout.decode('utf-8', errors='replace'))
             
             # Check for common signs of corruption
             video_tracks = [track for track in mediainfo_output.get('media', {}).get('track', []) if track.get('@type') == 'Video']

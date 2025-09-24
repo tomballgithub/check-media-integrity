@@ -268,6 +268,7 @@ def main():
     CONFIG = arg_parser()
     setup(CONFIG)
     check_path = CONFIG.checkpath
+    check_outcome_detail = None
 
     # initialize timed logger that print summary at the end of run
     timed_logger = TimedLogger(UPDATE_SEC_INTERVAL, UPDATE_MB_INTERVAL, logger)
@@ -287,8 +288,8 @@ def main():
     if os.path.isfile(check_path):
         # manage single file check
         check_result = check_file(check_path, CONFIG.error_detect)
+        check_outcome_detail = check_result[1]
         if not check_result[0]:
-            check_outcome_detail = check_result[1]
             log_check_outcome(check_outcome_detail, False, 1, 1)
             sys.exit(1)
         else:
@@ -330,9 +331,11 @@ def main():
 
     logger.info(f"Found {pre_count} files in {check_path}")
 
+    processes = []
     for i in range(CONFIG.threads):
         p = Process(target=worker, args=(task_queue, out_queue, CONFIG))
         p.start()
+        processes.append(p)
 
     # consume the outcome
     try:
@@ -340,7 +343,10 @@ def main():
 
             count += 1
 
-            check_result = out_queue.get(block=True, timeout=CONFIG.timeout)
+            try:
+                check_result = out_queue.get(block=True, timeout=CONFIG.timeout)
+            except Empty:  # Catch the Empty exception from multiprocessing
+                logger.error("Queue was empty after timeout, perhaps you need to raise the timeout")
             file_size = check_result[1][3]
             check_outcome_detail = check_result[1]
 
@@ -361,8 +367,15 @@ def main():
 
             # visualization logs and stats
             timed_logger.print_log(count, count_bad, total_file_size)
-    except Empty as e:
-        logger.error("Waiting other results for too much time, perhaps you have to raise the timeout", e.message)
+    except Exception as e:
+        logger.error(f"An unexpected error occurred during results consumption: {e}")
+    
+    # Wait for all child processes to finish
+    logger.info("----------------------------------------------")
+    logger.info(f"Waiting for all ({len(processes)}) child processes to finish")
+    for p in processes:
+        p.join()
+    logger.info(" - Completed")
 
     logger.info("==============================================")
     logger.info(f"TASK COMPLETED ON {time.strftime('%Y-%m-%d %H:%M:%S %Z')}")

@@ -17,7 +17,9 @@ class MagickChecker:
         proc = Popen(['identify', '-regard-warnings', filename], stdout=PIPE,
                     stderr=PIPE)  # '-verbose',
         out, err = proc.communicate()
+        out_decoded = out.decode('utf-8', errors='replace')
+        err_decoded = err.decode('utf-8', errors='replace')
         exitcode = proc.returncode
         if exitcode != 0:
             raise Exception('Identify error:' + str(exitcode))
-        return out
+        return out_decoded
