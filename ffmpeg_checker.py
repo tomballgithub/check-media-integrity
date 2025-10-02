@@ -4,7 +4,7 @@ import json
 class FFmpegChecker: 
     @staticmethod
     def check(filename, error_detect='default', threads=0):
-        ffmpeg_command = ['ffmpeg', '-v', 'error', '-i', filename, '-f', 'null', '-']
+        ffmpeg_command = ['ffmpeg', '-v', 'error', '-i', f"{filename}", '-f', 'null', '-']
 
         if error_detect != 'default':
             if error_detect == 'strict':
@@ -19,8 +19,9 @@ class FFmpegChecker:
             ffmpeg_command.append(str(threads))
         
         try:
-            result = subprocess.run(ffmpeg_command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-            stdout_decoded = result.stdout.decode('utf-8', errors='replace')
+            result = subprocess.run(ffmpeg_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8', errors='replace')
+            stdout_decoded = result.stdout
+
             lines = stdout_decoded.splitlines()
             json_output = json.dumps({i: line for i, line in enumerate(lines)}, separators=(',', ':'))
             if 'error' in stdout_decoded.lower():
