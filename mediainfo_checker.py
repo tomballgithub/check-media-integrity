@@ -31,14 +31,14 @@ class MediaInfoChecker:
 
     @staticmethod
     def check(filename):
-        mediainfo_command = ['mediainfo', '--Output=JSON', filename]
+        mediainfo_command = ['mediainfo', '--Output=JSON', f"{filename}"]
         
         try:
-            result = subprocess.run(mediainfo_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            result = subprocess.run(mediainfo_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8', errors='replace')
             if result.returncode != 0:
                 raise subprocess.CalledProcessError(result.returncode, mediainfo_command, output=result.stdout, stderr=result.stderr.decode('utf-8', errors='replace'))
             
-            mediainfo_output = json.loads(result.stdout.decode('utf-8', errors='replace'))
+            mediainfo_output = json.loads(result.stdout)
             
             # Check for common signs of corruption
             video_tracks = [track for track in mediainfo_output.get('media', {}).get('track', []) if track.get('@type') == 'Video']
