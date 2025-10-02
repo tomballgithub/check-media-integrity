@@ -20,9 +20,7 @@ class FFmpegChecker:
         
         try:
             result = subprocess.run(ffmpeg_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8', errors='replace')
-            stdout_decoded = result.stdout
-
-            lines = stdout_decoded.splitlines()
+            lines = result.stdout.splitlines()
             json_output = json.dumps({i: line for i, line in enumerate(lines)}, separators=(',', ':'))
             if 'error' in stdout_decoded.lower():
                 raise subprocess.CalledProcessError(result.returncode, ffmpeg_command, output=json_output, stderr=result.stderr.decode('utf-8', errors='replace'))
