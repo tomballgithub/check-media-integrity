@@ -347,6 +347,12 @@ def main():
                 check_result = out_queue.get(block=True, timeout=CONFIG.timeout)
             except Empty:  # Catch the Empty exception from multiprocessing
                 logger.error("Queue was empty after timeout, perhaps you need to raise the timeout")
+                continue
+            
+            if check_result is None:
+                logger.warning(f"Worker process returned None for result {j+1}/{pre_count}. Skipping.")
+                continue
+
             file_size = check_result[1][3]
             check_outcome_detail = check_result[1]
 
